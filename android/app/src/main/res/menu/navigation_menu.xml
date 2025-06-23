@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_dashboard"
+            android:icon="@android:drawable/ic_menu_view"
+            android:title="@string/realtime_monitoring" />
+        <item
+            android:id="@+id/nav_history"
+            android:icon="@android:drawable/ic_menu_recent_history"
+            android:title="@string/history_data" />
+        <item
+            android:id="@+id/nav_analytics"
+            android:icon="@android:drawable/ic_menu_agenda"
+            android:title="@string/data_analytics" />
+        <item
+            android:id="@+id/nav_prediction"
+            android:icon="@android:drawable/ic_menu_search"
+            android:title="@string/power_forecast" />
+    </group>
+    <item android:title="@string/settings">
+        <menu>
+            <item
+                android:id="@+id/nav_settings"
+                android:icon="@android:drawable/ic_menu_preferences"
+                android:title="@string/app_settings" />
+            <item
+                android:id="@+id/nav_logout"
+                android:icon="@android:drawable/ic_menu_close_clear_cancel"
+                android:title="@string/logout" />
+        </menu>
+    </item>
+</menu> 

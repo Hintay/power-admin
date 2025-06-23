@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">電力監視</string>
+    <string name="navigation_drawer_open">ナビゲーションドロワーを開く</string>
+    <string name="navigation_drawer_close">ナビゲーションドロワーを閉じる</string>
+    
+    <!-- Login Activity -->
+    <string name="power_monitoring_system">電力監視システム</string>
+    <string name="username">ユーザー名</string>
+    <string name="password">パスワード</string>
+    <string name="login">ログイン</string>
+    <string name="login_failed">ログインに失敗しました。ユーザー名とパスワードを確認してください</string>
+    <string name="login_success">ログイン成功</string>
+    <string name="network_error">ネットワークエラー：%s</string>
+    <string name="please_enter_username">ユーザー名を入力してください</string>
+    <string name="please_enter_password">パスワードを入力してください</string>
+    
+    <!-- Main Activity -->
+    <string name="power_monitoring">電力監視</string>
+    <string name="select_collector">コレクターを選択：</string>
+    <string name="connection_status">接続状態：</string>
+    <string name="connected">接続中</string>
+    <string name="disconnected">未接続</string>
+    <string name="voltage">電圧</string>
+    <string name="current">電流</string>
+    <string name="power">電力</string>
+    <string name="energy">電力量</string>
+    <string name="realtime_power_curve">リアルタイム電力カーブ</string>
+    <string name="historical_data">履歴データ</string>
+    <string name="power_prediction">電力予測</string>
+    <string name="load_collectors_failed">コレクターリストの読み込みに失敗</string>
+    <string name="connection_error">接続エラー：%s</string>
+    
+    <!-- Navigation Menu -->
+    <string name="realtime_monitoring">リアルタイム監視</string>
+    <string name="history_data">履歴データ</string>
+    <string name="data_analytics">データ分析</string>
+    <string name="power_forecast">電力予測</string>
+    <string name="app_settings">アプリ設定</string>
+    <string name="logout">ログアウト</string>
+    <string name="settings">設定</string>
+    
+    <!-- History Activity -->
+    <string name="historical_data_title">履歴データ</string>
+    <string name="select_time_range">時間範囲を選択</string>
+    <string name="start_date">開始日</string>
+    <string name="end_date">終了日</string>
+    <string name="load_data">データを読み込む</string>
+    <string name="loading">読み込み中...</string>
+    <string name="historical_power_data">履歴電力データ</string>
+    <string name="no_collector_selected">コレクターが選択されていません</string>
+    <string name="load_history_failed">履歴データの読み込みに失敗</string>
+    <string name="no_data_in_range">選択した時間範囲にデータがありません</string>
+    <string name="loaded_records">%d件の履歴データを読み込みました</string>
+    <string name="start_date_label">開始日：%s</string>
+    <string name="end_date_label">終了日：%s</string>
+    
+    <!-- Prediction Activity -->
+    <string name="power_prediction_title">電力予測</string>
+    <string name="daily_predicted_consumption">今日の予測消費電力</string>
+    <string name="monthly_predicted_consumption">月間予測消費電力</string>
+    <string name="prediction_description">予測の説明</string>
+    <string name="prediction_disclaimer">履歴データと使用パターンに基づいて、今日と今月の消費電力量とコストを予測します。予測結果は参考用です。</string>
+    <string name="refresh_data">データを更新</string>
+    <string name="hourly_power_prediction">24時間電力予測</string>
+    <string name="load_prediction_failed">予測データの読み込みに失敗</string>
+    <string name="prediction_data_updated">予測データが更新されました</string>
+    <string name="refreshing">更新中...</string>
+    <string name="no_prediction_data">予測データがありません。しばらくしてからもう一度お試しください</string>
+    <string name="current_consumption">現在の消費量</string>
+    <string name="remaining_energy">残りの予測電力量</string>
+    <string name="confidence_level">信頼度</string>
+    <string name="prediction_accuracy">予測精度</string>
+    <string name="prediction_algorithm">予測アルゴリズム</string>
+    <string name="select_algorithm">アルゴリズムを選択</string>
+    <string name="algorithm_hybrid">ハイブリッド</string>
+    <string name="algorithm_linear">線形</string>
+    <string name="algorithm_seasonal">季節性</string>
+    <string name="algorithm_moving_avg">移動平均</string>
+    <string name="accuracy_very_high">非常に高い</string>
+    <string name="accuracy_high">高い</string>
+    <string name="accuracy_medium">中</string>
+    <string name="accuracy_low">低い</string>
+    <string name="accuracy_very_low">非常に低い</string>
+    <string name="accuracy_unknown">不明</string>
+    <string name="recommendations_title">省エネ提案</string>
+    
+    <!-- Placeholder Activity -->
+    <string name="feature_in_development">機能開発中...</string>
+    <string name="feature_coming_soon">この機能は開発中です。お楽しみに</string>
+    
+    <!-- Common -->
+    <string name="voltage_unit">%.1f V</string>
+    <string name="current_unit">%.2f A</string>
+    <string name="power_unit">%.1f W</string>
+    <string name="energy_unit">%.3f Wh</string>
+    <string name="cost_unit">¥%.2f</string>
+    <string name="daily_consumption_unit">%.2f Wh</string>
+    <string name="predicted_energy_unit">予測電力量 (Wh)</string>
+    <string name="power_w_unit">電力 (W)</string>
+    <string name="voltage_v_unit">電圧 (V)</string>
+    <string name="current_a_unit">電流 (A)</string>
+    <string name="energy_kwh_unit">電力量 (Wh)</string>
+    
+    <!-- Chart interaction and markers -->
+    <string name="marker_power_label">電力: %.2f W</string>
+    <string name="marker_voltage_label">電圧: %.2f V</string>
+    <string name="marker_current_label">電流: %.3f A</string>
+    <string name="marker_frequency_label">周波数: %.2f Hz</string>
+    <string name="marker_energy_label">電力量: %.0f Wh</string>
+    <string name="power_format">電力: %.1f W</string>
+    <string name="voltage_format">電圧: %.1f V</string>
+    <string name="current_format">電流: %.2f A</string>
+    <string name="energy_format">電力量: %.0f Wh</string>
+    <string name="data_processing_error">データ処理エラー</string>
+    <string name="chart_sync_enabled">チャート同期が有効</string>
+    <string name="chart_sync_disabled">チャート同期が無効</string>
+    
+    <!-- Historical data status -->
+    <string name="last_known_data">最後の既知データ</string>
+    <string name="realtime_data">リアルタイムデータ</string>
+    <string name="data_timestamp">データ時刻：%s</string>
+    <string name="loading_last_data">最後の既知データを読み込み中...</string>
+    <string name="no_historical_data">履歴データがありません</string>
+    <string name="load_last_data_failed">最後の既知データの読み込みに失敗</string>
+    <string name="waiting_for_data">リアルタイムデータを待機中...</string>
+    
+    <!-- Chart switching -->
+    <string name="chart_switched_to">%sチャートに切り替えました</string>
+    <string name="realtime_voltage_curve">リアルタイム電圧カーブ</string>
+    <string name="realtime_current_curve">リアルタイム電流カーブ</string>
+    <string name="realtime_energy_curve">リアルタイム電力量カーブ</string>
+    <string name="no_timestamp_available">タイムスタンプなし</string>
+    <string name="chart_switching_hint">💡 下のデータカードをタップしてチャート表示を切り替え</string>
+    <string name="chart_switching_title">インタラクティブチャート</string>
+    <string name="chart_switching_subtitle">下のデータカードをタップしてチャートビューを切り替え</string>
+    <string name="close_hint">ヒントを閉じる</string>
+</resources> 

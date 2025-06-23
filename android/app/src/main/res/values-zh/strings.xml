@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">电力监控</string>
+    <string name="navigation_drawer_open">打开导航抽屉</string>
+    <string name="navigation_drawer_close">关闭导航抽屉</string>
+    
+    <!-- Login Activity -->
+    <string name="power_monitoring_system">电力监控系统</string>
+    <string name="username">用户名</string>
+    <string name="password">密码</string>
+    <string name="login">登录</string>
+    <string name="login_failed">登录失败，请检查用户名和密码</string>
+    <string name="login_success">登录成功</string>
+    <string name="network_error">网络错误：%s</string>
+    <string name="please_enter_username">请输入用户名</string>
+    <string name="please_enter_password">请输入密码</string>
+    
+    <!-- Main Activity -->
+    <string name="power_monitoring">电力监控</string>
+    <string name="select_collector">选择采集端：</string>
+    <string name="connection_status">连接状态：</string>
+    <string name="connected">已连接</string>
+    <string name="disconnected">未连接</string>
+    <string name="voltage">电压</string>
+    <string name="current">电流</string>
+    <string name="power">功率</string>
+    <string name="energy">电能</string>
+    <string name="realtime_power_curve">实时功率曲线</string>
+    <string name="historical_data">历史数据</string>
+    <string name="power_prediction">用电预测</string>
+    <string name="load_collectors_failed">加载采集端列表失败</string>
+    <string name="connection_error">连接错误：%s</string>
+    
+    <!-- Navigation Menu -->
+    <string name="realtime_monitoring">实时监控</string>
+    <string name="history_data">历史数据</string>
+    <string name="data_analytics">数据分析</string>
+    <string name="power_forecast">用电预测</string>
+    <string name="app_settings">应用设置</string>
+    <string name="logout">退出登录</string>
+    <string name="settings">设置</string>
+    
+    <!-- History Activity -->
+    <string name="historical_data_title">历史数据</string>
+    <string name="select_time_range">选择时间范围</string>
+    <string name="start_date">开始日期</string>
+    <string name="end_date">结束日期</string>
+    <string name="load_data">加载数据</string>
+    <string name="loading">加载中...</string>
+    <string name="historical_power_data">历史功率数据</string>
+    <string name="no_collector_selected">未选择采集端</string>
+    <string name="load_history_failed">加载历史数据失败</string>
+    <string name="no_data_in_range">所选时间范围内无数据</string>
+    <string name="loaded_records">加载了 %d 条历史数据</string>
+    <string name="start_date_label">开始日期：%s</string>
+    <string name="end_date_label">结束日期：%s</string>
+    
+    <!-- Prediction Activity -->
+    <string name="power_prediction_title">用电预测</string>
+    <string name="daily_predicted_consumption">今日预测用电</string>
+    <string name="monthly_predicted_consumption">月度预测用电</string>
+    <string name="prediction_description">预测说明</string>
+    <string name="prediction_disclaimer">基于历史数据和用电模式，预测今日和本月的用电量及费用。预测结果仅供参考。</string>
+    <string name="refresh_data">刷新数据</string>
+    <string name="hourly_power_prediction">24小时用电预测</string>
+    <string name="load_prediction_failed">加载预测数据失败</string>
+    <string name="prediction_data_updated">预测数据已更新</string>
+    <string name="refreshing">刷新中...</string>
+    <string name="no_prediction_data">无可用预测数据，请稍后再试</string>
+    <string name="current_consumption">当前已用</string>
+    <string name="remaining_energy">剩余可用</string>
+    <string name="confidence_level">置信度</string>
+    <string name="prediction_accuracy">预测准确度</string>
+    <string name="prediction_algorithm">预测算法</string>
+    <string name="select_algorithm">选择算法</string>
+    <string name="algorithm_hybrid">混合</string>
+    <string name="algorithm_linear">线性</string>
+    <string name="algorithm_seasonal">季节性</string>
+    <string name="algorithm_moving_avg">移动平均</string>
+    <string name="accuracy_very_high">非常高</string>
+    <string name="accuracy_high">高</string>
+    <string name="accuracy_medium">中等</string>
+    <string name="accuracy_low">低</string>
+    <string name="accuracy_very_low">非常低</string>
+    <string name="accuracy_unknown">未知</string>
+    <string name="recommendations_title">节能建议</string>
+    
+    <!-- Placeholder Activity -->
+    <string name="feature_in_development">功能开发中...</string>
+    <string name="feature_coming_soon">该功能正在开发中，敬请期待</string>
+    
+    <!-- Common -->
+    <string name="voltage_unit">%.1f V</string>
+    <string name="current_unit">%.2f A</string>
+    <string name="power_unit">%.1f W</string>
+    <string name="energy_unit">%.3f Wh</string>
+    <string name="cost_unit">¥%.2f</string>
+    <string name="daily_consumption_unit">%.2f Wh</string>
+    <string name="predicted_energy_unit">预测电量 (Wh)</string>
+    <string name="power_w_unit">功率 (W)</string>
+    <string name="voltage_v_unit">电压 (V)</string>
+    <string name="current_a_unit">电流 (A)</string>
+    <string name="energy_kwh_unit">电能 (Wh)</string>
+    
+    <!-- Time range selection -->
+    <string name="time_range_hour">小时</string>
+    <string name="time_range_day">天</string>
+    <string name="time_range_week">周</string>
+    <string name="time_range_month">月</string>
+    <string name="time_range_custom">自定义</string>
+    <string name="select_time_period">选择时间周期</string>
+    
+    <!-- Chart display options -->
+    <string name="show_power">显示功率</string>
+    <string name="show_voltage">显示电压</string>
+    <string name="show_current">显示电流</string>
+    <string name="show_frequency">显示频率</string>
+    <string name="frequency_hz_unit">频率 (Hz)</string>
+    <string name="chart_display_options">图表显示选项</string>
+    <string name="multiple_data_display">多数据显示</string>
+    
+    <!-- Last X hours/days/weeks/months -->
+    <string name="last_24_hours">过去24小时</string>
+    <string name="last_7_days">过去7天</string>
+    <string name="last_4_weeks">过去4周</string>
+    <string name="last_12_months">过去12个月</string>
+    
+    <!-- Energy consumption statistics -->
+    <string name="energy_statistics">电能统计</string>
+    <string name="total_energy_consumption">总电能消耗</string>
+    <string name="period_start_energy">期间开始电能</string>
+    <string name="period_end_energy">期间结束电能</string>
+    <string name="energy_consumed">消耗电能</string>
+    <string name="show_energy">显示电能</string>
+    <string name="energy_consumption_chart">电能消耗图表</string>
+    
+    <!-- Chart interaction and markers -->
+    <string name="marker_power_label">功率: %.2f W</string>
+    <string name="marker_voltage_label">电压: %.2f V</string>
+    <string name="marker_current_label">电流: %.3f A</string>
+    <string name="marker_frequency_label">频率: %.2f Hz</string>
+    <string name="marker_energy_label">电能: %.0f Wh</string>
+    <string name="power_format">功率: %.1f W</string>
+    <string name="voltage_format">电压: %.1f V</string>
+    <string name="current_format">电流: %.2f A</string>
+    <string name="energy_format">电能: %.0f Wh</string>
+    <string name="data_processing_error">数据处理错误</string>
+    <string name="chart_sync_enabled">图表同步已启用</string>
+    <string name="chart_sync_disabled">图表同步已禁用</string>
+    
+    <!-- Historical data status -->
+    <string name="last_known_data">最后已知数据</string>
+    <string name="realtime_data">实时数据</string>
+    <string name="data_timestamp">数据时间：%s</string>
+    <string name="loading_last_data">正在加载最后已知数据...</string>
+    <string name="no_historical_data">没有历史数据</string>
+    <string name="load_last_data_failed">加载最后已知数据失败</string>
+    <string name="waiting_for_data">等待实时数据...</string>
+    
+    <!-- Chart switching -->
+    <string name="chart_switched_to">切换至%s图表</string>
+    <string name="realtime_voltage_curve">实时电压曲线</string>
+    <string name="realtime_current_curve">实时电流曲线</string>
+    <string name="realtime_energy_curve">实时电能曲线</string>
+    <string name="no_timestamp_available">无时间戳信息</string>
+    <string name="chart_switching_hint">💡 点击下方数据卡片切换图表显示</string>
+    <string name="chart_switching_title">交互式图表</string>
+    <string name="chart_switching_subtitle">点击下方任意数据卡片切换图表视图</string>
+    <string name="close_hint">关闭提示</string>
+</resources> 

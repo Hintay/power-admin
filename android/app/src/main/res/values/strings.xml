@@ -1,0 +1,169 @@
+<resources>
+    <string name="app_name">Power Monitor</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    
+    <!-- Login Activity -->
+    <string name="power_monitoring_system">Power Monitoring System</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="login_failed">Login failed, please check username and password</string>
+    <string name="login_success">Login successful</string>
+    <string name="network_error">Network error: %s</string>
+    <string name="please_enter_username">Please enter username</string>
+    <string name="please_enter_password">Please enter password</string>
+    
+    <!-- Main Activity -->
+    <string name="power_monitoring">Power Monitoring</string>
+    <string name="select_collector">Select Collector:</string>
+    <string name="connection_status">Connection Status:</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="voltage">Voltage</string>
+    <string name="current">Current</string>
+    <string name="power">Power</string>
+    <string name="energy">Energy</string>
+    <string name="realtime_power_curve">Real-time Power Curve</string>
+    <string name="historical_data">Historical Data</string>
+    <string name="power_prediction">Power Prediction</string>
+    <string name="load_collectors_failed">Failed to load collector list</string>
+    <string name="connection_error">Connection error: %s</string>
+    
+    <!-- Navigation Menu -->
+    <string name="realtime_monitoring">Real-time Monitoring</string>
+    <string name="history_data">Historical Data</string>
+    <string name="data_analytics">Data Analytics</string>
+    <string name="power_forecast">Power Forecast</string>
+    <string name="app_settings">App Settings</string>
+    <string name="logout">Logout</string>
+    <string name="settings">Settings</string>
+    
+    <!-- History Activity -->
+    <string name="historical_data_title">Historical Data</string>
+    <string name="select_time_range">Select Time Range</string>
+    <string name="start_date">Start Date</string>
+    <string name="end_date">End Date</string>
+    <string name="load_data">Load Data</string>
+    <string name="loading">Loading...</string>
+    <string name="historical_power_data">Historical Power Data</string>
+    <string name="no_collector_selected">No collector selected</string>
+    <string name="load_history_failed">Failed to load historical data</string>
+    <string name="no_data_in_range">No data in selected time range</string>
+    <string name="loaded_records">Loaded %d historical records</string>
+    <string name="start_date_label">Start Date: %s</string>
+    <string name="end_date_label">End Date: %s</string>
+    
+    <!-- Prediction Activity -->
+    <string name="power_prediction_title">Power Prediction</string>
+    <string name="daily_predicted_consumption">Daily Predicted Consumption</string>
+    <string name="monthly_predicted_consumption">Monthly Predicted Consumption</string>
+    <string name="prediction_description">Prediction Description</string>
+    <string name="prediction_disclaimer">Based on historical data and usage patterns, predict today\'s and this month\'s power consumption and costs. Prediction results are for reference only.</string>
+    <string name="refresh_data">Refresh Data</string>
+    <string name="hourly_power_prediction">24-hour Power Prediction</string>
+    <string name="load_prediction_failed">Failed to load prediction data</string>
+    <string name="prediction_data_updated">Prediction data updated</string>
+    <string name="refreshing">Refreshing...</string>
+    <string name="no_prediction_data">No prediction data available, please try again later</string>
+    <string name="current_consumption">Current Consumption</string>
+    <string name="remaining_energy">Remaining Energy</string>
+    <string name="confidence_level">Confidence Level</string>
+    <string name="prediction_accuracy">Prediction Accuracy</string>
+    <string name="prediction_algorithm">Prediction Algorithm</string>
+    <string name="select_algorithm">Select Algorithm</string>
+    <string name="algorithm_hybrid">Hybrid</string>
+    <string name="algorithm_linear">Linear</string>
+    <string name="algorithm_seasonal">Seasonal</string>
+    <string name="algorithm_moving_avg">Moving Avg</string>
+    <string name="accuracy_very_high">Very High</string>
+    <string name="accuracy_high">High</string>
+    <string name="accuracy_medium">Medium</string>
+    <string name="accuracy_low">Low</string>
+    <string name="accuracy_very_low">Very Low</string>
+    <string name="accuracy_unknown">Unknown</string>
+    <string name="recommendations_title">Recommendations</string>
+    <string name="predicted_energy_unit">Predicted Energy (Wh)</string>
+    
+    <!-- Placeholder Activity -->
+    <string name="feature_in_development">Feature in Development...</string>
+    <string name="feature_coming_soon">This feature is under development, please stay tuned</string>
+    
+    <!-- Common -->
+    <string name="voltage_unit">%.1f V</string>
+    <string name="current_unit">%.2f A</string>
+    <string name="power_unit">%.1f W</string>
+    <string name="energy_unit">%.3f Wh</string>
+    <string name="cost_unit">¥%.2f</string>
+    <string name="daily_consumption_unit">%.2f Wh</string>
+    <string name="power_w_unit">Power (W)</string>
+    <string name="voltage_v_unit">Voltage (V)</string>
+    <string name="current_a_unit">Current (A)</string>
+    <string name="energy_kwh_unit">Energy (Wh)</string>
+    
+    <!-- Time range selection -->
+    <string name="time_range_hour">Hour</string>
+    <string name="time_range_day">Day</string>
+    <string name="time_range_week">Week</string>
+    <string name="time_range_month">Month</string>
+    <string name="time_range_custom">Custom</string>
+    <string name="select_time_period">Select Time Period</string>
+    
+    <!-- Chart display options -->
+    <string name="show_power">Show Power</string>
+    <string name="show_voltage">Show Voltage</string>
+    <string name="show_current">Show Current</string>
+    <string name="show_frequency">Show Frequency</string>
+    <string name="frequency_hz_unit">Frequency (Hz)</string>
+    <string name="chart_display_options">Chart Display Options</string>
+    <string name="multiple_data_display">Multiple Data Display</string>
+    
+    <!-- Last X hours/days/weeks/months -->
+    <string name="last_24_hours">Last 24 Hours</string>
+    <string name="last_7_days">Last 7 Days</string>
+    <string name="last_4_weeks">Last 4 Weeks</string>
+    <string name="last_12_months">Last 12 Months</string>
+    
+    <!-- Energy consumption statistics -->
+    <string name="energy_statistics">Energy Statistics</string>
+    <string name="total_energy_consumption">Total Energy Consumption</string>
+    <string name="period_start_energy">Period Start Energy</string>
+    <string name="period_end_energy">Period End Energy</string>
+    <string name="energy_consumed">Energy Consumed</string>
+    <string name="show_energy">Show Energy</string>
+    <string name="energy_consumption_chart">Energy Consumption Chart</string>
+    
+    <!-- Chart interaction and markers -->
+    <string name="marker_power_label">Power: %.2f W</string>
+    <string name="marker_voltage_label">Voltage: %.2f V</string>
+    <string name="marker_current_label">Current: %.3f A</string>
+    <string name="marker_frequency_label">Frequency: %.2f Hz</string>
+    <string name="marker_energy_label">Energy: %.0f Wh</string>
+    <string name="power_format">Power: %.1f W</string>
+    <string name="voltage_format">Voltage: %.1f V</string>
+    <string name="current_format">Current: %.2f A</string>
+    <string name="energy_format">Energy: %.0f Wh</string>
+    <string name="data_processing_error">Error processing data</string>
+    <string name="chart_sync_enabled">Chart synchronization enabled</string>
+    <string name="chart_sync_disabled">Chart synchronization disabled</string>
+    
+    <!-- Historical data status -->
+    <string name="last_known_data">Last Known Data</string>
+    <string name="realtime_data">Real-time Data</string>
+    <string name="data_timestamp">Data Time: %s</string>
+    <string name="loading_last_data">Loading last known data...</string>
+    <string name="no_historical_data">No historical data available</string>
+    <string name="load_last_data_failed">Failed to load last known data</string>
+    <string name="waiting_for_data">Waiting for real-time data...</string>
+    
+    <!-- Chart switching -->
+    <string name="chart_switched_to">Switched to %s chart</string>
+    <string name="realtime_voltage_curve">Real-time Voltage Curve</string>
+    <string name="realtime_current_curve">Real-time Current Curve</string>
+    <string name="realtime_energy_curve">Real-time Energy Curve</string>
+    <string name="no_timestamp_available">No timestamp available</string>
+    <string name="chart_switching_hint">💡 Tap on data cards below to switch chart display</string>
+    <string name="chart_switching_title">Interactive Charts</string>
+    <string name="chart_switching_subtitle">Tap any data card below to switch chart view</string>
+    <string name="close_hint">Close hint</string>
+</resources>
