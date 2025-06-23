@@ -180,38 +180,66 @@ func getPowerTrends(c *gin.Context) {
 		DataPoints     int64   `json:"data_points"`
 	}
 
-	var rawQuery string
-	if aggregateBy == "hour" {
-		rawQuery = `
-			SELECT 
-				TO_CHAR(timestamp, 'YYYY-MM-DD HH24:00:00') as period,
-				SUM(power) as total_power,
-				AVG(power) as average_power,
-				MAX(power) as max_power,
-				MIN(power) as min_power,
-				SUM(energy) as energy_consumed,
-				COUNT(*) as data_points
-			FROM power_data 
-			WHERE collector_id = ANY($1) AND timestamp >= $2
-			GROUP BY TO_CHAR(timestamp, 'YYYY-MM-DD HH24:00:00')
-			ORDER BY period`
-	} else {
-		rawQuery = `
-			SELECT 
-				TO_CHAR(timestamp, 'YYYY-MM-DD') as period,
-				SUM(power) as total_power,
-				AVG(power) as average_power,
-				MAX(power) as max_power,
-				MIN(power) as min_power,
-				SUM(energy) as energy_consumed,
-				COUNT(*) as data_points
-			FROM power_data 
-			WHERE collector_id = ANY($1) AND timestamp >= $2
-			GROUP BY TO_CHAR(timestamp, 'YYYY-MM-DD')
-			ORDER BY period`
+	// Use GORM's standard query methods instead of raw SQL
+	var powerDataList []model.PowerData
+	model.DB.Where("collector_id IN ? AND timestamp >= ?", collectorIDs, startTime).
+		Find(&powerDataList)
+
+	// Group by period manually
+	periodMap := make(map[string]struct {
+		TotalPower     float64
+		PowerSum       float64
+		PowerCount     int64
+		MaxPower       float64
+		MinPower       float64
+		EnergyConsumed float64
+		DataPoints     int64
+	})
+
+	for _, data := range powerDataList {
+		var period string
+		if aggregateBy == "hour" {
+			period = data.Timestamp.Format("2006-01-02 15:00:00")
+		} else {
+			period = data.Timestamp.Format("2006-01-02")
+		}
+
+		entry := periodMap[period]
+		entry.TotalPower += data.Power
+		entry.PowerSum += data.Power
+		entry.PowerCount++
+		if entry.DataPoints == 0 || data.Power > entry.MaxPower {
+			entry.MaxPower = data.Power
+		}
+		if entry.DataPoints == 0 || data.Power < entry.MinPower {
+			entry.MinPower = data.Power
+		}
+		entry.EnergyConsumed += data.Energy
+		entry.DataPoints++
+		periodMap[period] = entry
 	}
 
-	model.DB.Raw(rawQuery, collectorIDs, startTime).Scan(&trends)
+	// Convert map to slice
+	for period, entry := range periodMap {
+		avgPower := entry.PowerSum / float64(entry.PowerCount)
+		trends = append(trends, struct {
+			Period         string  `json:"period"`
+			TotalPower     float64 `json:"total_power"`
+			AveragePower   float64 `json:"average_power"`
+			MaxPower       float64 `json:"max_power"`
+			MinPower       float64 `json:"min_power"`
+			EnergyConsumed float64 `json:"energy_consumed"`
+			DataPoints     int64   `json:"data_points"`
+		}{
+			Period:         period,
+			TotalPower:     entry.TotalPower,
+			AveragePower:   avgPower,
+			MaxPower:       entry.MaxPower,
+			MinPower:       entry.MinPower,
+			EnergyConsumed: entry.EnergyConsumed,
+			DataPoints:     entry.DataPoints,
+		})
+	}
 
 	// Calculate trend analysis
 	var analysis struct {
@@ -360,16 +388,39 @@ func getCostAnalysis(c *gin.Context) {
 		DataPoints int64   `json:"data_points"`
 	}
 
-	model.DB.Raw(`
-		SELECT 
-			TO_CHAR(timestamp, 'YYYY-MM-DD') as date,
-			COALESCE(SUM(energy) / 1000, 0) as energy_used_kwh,
-			COUNT(*) as data_points
-		FROM power_data 
-		WHERE collector_id = ANY($1) AND timestamp >= $2
-		GROUP BY TO_CHAR(timestamp, 'YYYY-MM-DD')
-		ORDER BY date
-	`, collectorIDs, startTime).Scan(&dailyCosts)
+	// Use GORM's standard query methods instead of raw SQL
+	var powerDataList []model.PowerData
+	model.DB.Where("collector_id IN ? AND timestamp >= ?", collectorIDs, startTime).
+		Find(&powerDataList)
+
+	// Group by date manually
+	dailyMap := make(map[string]struct {
+		EnergyUsed float64
+		DataPoints int64
+	})
+
+	for _, data := range powerDataList {
+		date := data.Timestamp.Format("2006-01-02")
+		entry := dailyMap[date]
+		entry.EnergyUsed += data.Energy / 1000.0 // Convert to kWh
+		entry.DataPoints++
+		dailyMap[date] = entry
+	}
+
+	// Convert map to slice
+	for date, entry := range dailyMap {
+		dailyCosts = append(dailyCosts, struct {
+			Date       string  `json:"date"`
+			EnergyUsed float64 `json:"energy_used_kwh"`
+			Cost       float64 `json:"cost"`
+			DataPoints int64   `json:"data_points"`
+		}{
+			Date:       date,
+			EnergyUsed: entry.EnergyUsed,
+			Cost:       0, // Will be calculated below
+			DataPoints: entry.DataPoints,
+		})
+	}
 
 	for i := range dailyCosts {
 		dailyCosts[i].Cost = dailyCosts[i].EnergyUsed * electricityRate
@@ -540,11 +591,8 @@ func getDailyEnergyPrediction(c *gin.Context) {
 	}
 
 	// Validate collector belongs to user and is active
-	var count int64
-	model.DB.Model(&model.Collector{}).
-		Where("user_id = ? AND collector_id = ? AND is_active = ?", userID, collectorID, true).
-		Count(&count)
-	if count == 0 {
+	var collector model.Collector
+	if err := model.DB.Where("id = ? AND user_id = ? AND is_active = ?", collectorID, userID, true).First(&collector).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
 			"error":   "Collector not found or not accessible",
@@ -552,7 +600,7 @@ func getDailyEnergyPrediction(c *gin.Context) {
 		return
 	}
 
-	collectorIDs := []string{collectorID}
+	collectorIDs := []string{collector.CollectorID}
 
 	// Get today's start time
 	now := time.Now()
@@ -566,10 +614,27 @@ func getDailyEnergyPrediction(c *gin.Context) {
 			collectorIDs, todayStart, minDataTime).
 		Count(&todayDataCount)
 
+	// If no current day data, check for historical data availability
+	var hasHistoricalData bool = false
 	if todayDataCount == 0 {
+		var historicalDataCount int64
+		// Check for data in the past 30 days
+		historicalStartTime := now.AddDate(0, 0, -30)
+		model.DB.Model(&model.PowerData{}).
+			Where("collector_id IN ? AND timestamp >= ? AND timestamp < ?",
+				collectorIDs, historicalStartTime, todayStart).
+			Count(&historicalDataCount)
+
+		if historicalDataCount >= 24 { // At least 24 data points (roughly 1 day worth)
+			hasHistoricalData = true
+		}
+	}
+
+	// If neither current day nor historical data is available, return error
+	if todayDataCount == 0 && !hasHistoricalData {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error":   "Insufficient data: minimum 10 minutes of current day data required",
+			"error":   "Insufficient data: no current day data and insufficient historical data for prediction",
 		})
 		return
 	}
@@ -578,21 +643,48 @@ func getDailyEnergyPrediction(c *gin.Context) {
 	var prediction *EnergyPrediction
 	var err error
 
+	// Pass information about data availability to prediction functions
+	hasCurrentData := todayDataCount > 0
+
+	// Debug information
+	debugInfo := gin.H{
+		"collector_ids":    collectorIDs,
+		"today_data_count": todayDataCount,
+		"has_current_data": hasCurrentData,
+		"has_historical":   hasHistoricalData,
+		"algorithm":        algorithm,
+		"prediction_time":  now,
+		"today_start":      todayStart,
+	}
+
 	switch algorithm {
 	case "linear":
-		prediction, err = predictLinearTrend(collectorIDs, todayStart, now)
+		prediction, err = predictLinearTrend(collectorIDs, todayStart, now, hasCurrentData)
+		if err != nil {
+			debugInfo["linear_error"] = err.Error()
+		}
 	case "seasonal":
-		prediction, err = predictSeasonalPattern(collectorIDs, todayStart, now)
+		prediction, err = predictSeasonalPattern(collectorIDs, todayStart, now, hasCurrentData)
+		if err != nil {
+			debugInfo["seasonal_error"] = err.Error()
+		}
 	case "moving_average":
-		prediction, err = predictMovingAverage(collectorIDs, todayStart, now)
+		prediction, err = predictMovingAverage(collectorIDs, todayStart, now, hasCurrentData)
+		if err != nil {
+			debugInfo["moving_average_error"] = err.Error()
+		}
 	default: // hybrid
-		prediction, err = predictHybridMethod(collectorIDs, todayStart, now)
+		prediction, err = predictHybridMethod(collectorIDs, todayStart, now, hasCurrentData)
+		if err != nil {
+			debugInfo["hybrid_error"] = err.Error()
+		}
 	}
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error":   fmt.Sprintf("Prediction failed: %v", err),
+			"debug":   debugInfo,
 		})
 		return
 	}
@@ -607,6 +699,8 @@ func getDailyEnergyPrediction(c *gin.Context) {
 		"data_points":        todayDataCount,
 		"prediction_time":    now,
 		"collectors":         collectorIDs,
+		"has_current_data":   hasCurrentData,
+		"debug":              debugInfo,
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -653,18 +747,44 @@ type PredictionMetrics struct {
 }
 
 // predictHybridMethod combines multiple prediction methods for better accuracy
-func predictHybridMethod(collectorIDs []string, todayStart, now time.Time) (*EnergyPrediction, error) {
-	// Get multiple predictions
-	linearPred, _ := predictLinearTrend(collectorIDs, todayStart, now)
-	seasonalPred, _ := predictSeasonalPattern(collectorIDs, todayStart, now)
-	avgPred, _ := predictMovingAverage(collectorIDs, todayStart, now)
+func predictHybridMethod(collectorIDs []string, todayStart, now time.Time, hasCurrentData bool) (*EnergyPrediction, error) {
+	// Get multiple predictions with detailed error tracking
+	var errors []string
+
+	linearPred, linearErr := predictLinearTrend(collectorIDs, todayStart, now, hasCurrentData)
+	if linearErr != nil {
+		errors = append(errors, fmt.Sprintf("Linear trend: %v", linearErr))
+	}
+
+	seasonalPred, seasonalErr := predictSeasonalPattern(collectorIDs, todayStart, now, hasCurrentData)
+	if seasonalErr != nil {
+		errors = append(errors, fmt.Sprintf("Seasonal pattern: %v", seasonalErr))
+	}
+
+	avgPred, avgErr := predictMovingAverage(collectorIDs, todayStart, now, hasCurrentData)
+	if avgErr != nil {
+		errors = append(errors, fmt.Sprintf("Moving average: %v", avgErr))
+	}
 
 	if linearPred == nil && seasonalPred == nil && avgPred == nil {
-		return nil, fmt.Errorf("all prediction methods failed")
+		// Try a simple fallback prediction based on any available data
+		fallbackPred, fallbackErr := createFallbackPrediction(collectorIDs, todayStart, now, hasCurrentData)
+		if fallbackPred != nil {
+			fallbackPred.ModelMetrics.Algorithm = "fallback"
+			fallbackPred.Recommendations = append(fallbackPred.Recommendations,
+				"Using fallback prediction due to insufficient historical data. Accuracy may be limited.")
+			return fallbackPred, nil
+		}
+
+		errorDetails := "All prediction methods failed: " + fmt.Sprintf("%v", errors)
+		if fallbackErr != nil {
+			errorDetails += fmt.Sprintf(". Fallback error: %v", fallbackErr)
+		}
+		return nil, fmt.Errorf("%s. Collector IDs: %v, Has current data: %v", errorDetails, collectorIDs, hasCurrentData)
 	}
 
 	// Weight predictions based on data quality and historical accuracy
-	weights := calculatePredictionWeights(collectorIDs, todayStart, now)
+	weights := calculatePredictionWeights(collectorIDs, todayStart, now, hasCurrentData)
 
 	totalPrediction := 0.0
 	totalWeight := 0.0
@@ -708,7 +828,7 @@ func predictHybridMethod(collectorIDs []string, todayStart, now time.Time) (*Ene
 	metrics := calculatePredictionMetrics(collectorIDs, todayStart, now, "hybrid")
 
 	// Generate recommendations
-	recommendations := generatePredictionRecommendations(finalPrediction, currentConsumption, now)
+	recommendations := generatePredictionRecommendations(finalPrediction, currentConsumption, now, hasCurrentData)
 
 	return &EnergyPrediction{
 		TotalDailyEnergyKWh:  finalPrediction,
@@ -724,25 +844,49 @@ func predictHybridMethod(collectorIDs []string, todayStart, now time.Time) (*Ene
 }
 
 // predictLinearTrend uses linear extrapolation based on current day's trend
-func predictLinearTrend(collectorIDs []string, todayStart, now time.Time) (*EnergyPrediction, error) {
+func predictLinearTrend(collectorIDs []string, todayStart, now time.Time, hasCurrentData bool) (*EnergyPrediction, error) {
 	// Get hourly consumption for today
 	var hourlyData []struct {
 		Hour   int     `json:"hour"`
 		Energy float64 `json:"energy"`
 	}
 
-	model.DB.Raw(`
-		SELECT 
-			EXTRACT(HOUR FROM timestamp) as hour,
-			SUM(energy) / 1000.0 as energy
-		FROM power_data 
-		WHERE collector_id = ANY($1) AND timestamp >= $2 AND timestamp <= $3
-		GROUP BY EXTRACT(HOUR FROM timestamp)
-		ORDER BY hour
-	`, collectorIDs, todayStart, now).Scan(&hourlyData)
+	// Validate input
+	if len(collectorIDs) == 0 {
+		return nil, fmt.Errorf("no collector IDs provided for linear trend prediction")
+	}
+
+	// Use GORM's standard query methods instead of raw SQL to ensure database compatibility
+	var powerDataList []model.PowerData
+	err := model.DB.Where("collector_id IN ? AND timestamp >= ? AND timestamp <= ?", collectorIDs, todayStart, now).
+		Find(&powerDataList).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("database error in linear trend prediction: %v", err)
+	}
+
+	// Group by hour manually
+	hourlyMap := make(map[int]float64)
+	for _, data := range powerDataList {
+		hour := data.Timestamp.Hour()
+		hourlyMap[hour] += data.Energy / 1000.0 // Convert to kWh
+	}
+
+	// Convert map to slice
+	for hour, energy := range hourlyMap {
+		hourlyData = append(hourlyData, struct {
+			Hour   int     `json:"hour"`
+			Energy float64 `json:"energy"`
+		}{Hour: hour, Energy: energy})
+	}
+
+	if !hasCurrentData {
+		// If no current data, use historical pattern to predict full day
+		return predictSeasonalPattern(collectorIDs, todayStart, now, hasCurrentData)
+	}
 
 	if len(hourlyData) < 2 {
-		return nil, fmt.Errorf("insufficient data for linear trend prediction")
+		return nil, fmt.Errorf("insufficient hourly data for linear trend prediction (found %d hours, need at least 2). Power data points: %d", len(hourlyData), len(powerDataList))
 	}
 
 	// Calculate linear trend
@@ -777,10 +921,14 @@ func predictLinearTrend(collectorIDs []string, todayStart, now time.Time) (*Ener
 }
 
 // predictSeasonalPattern uses historical data from similar days
-func predictSeasonalPattern(collectorIDs []string, todayStart, now time.Time) (*EnergyPrediction, error) {
+func predictSeasonalPattern(collectorIDs []string, todayStart, now time.Time, hasCurrentData bool) (*EnergyPrediction, error) {
+	// Validate input
+	if len(collectorIDs) == 0 {
+		return nil, fmt.Errorf("no collector IDs provided")
+	}
+
 	// Get historical data for the same day of week over the past 4 weeks
 	var historicalDays []time.Time
-
 	for i := 1; i <= 4; i++ {
 		historicalDay := todayStart.AddDate(0, 0, -7*i)
 		historicalDays = append(historicalDays, historicalDay)
@@ -791,15 +939,25 @@ func predictSeasonalPattern(collectorIDs []string, todayStart, now time.Time) (*
 		Energy float64   `json:"energy"`
 	}
 
+	// Track data collection details for debugging
+	var dataCollectionDetails []string
+
 	for _, date := range historicalDays {
 		dayStart := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 		dayEnd := dayStart.Add(24 * time.Hour)
 
 		var dayEnergy float64
-		model.DB.Model(&model.PowerData{}).
+		err := model.DB.Model(&model.PowerData{}).
 			Select("COALESCE(SUM(energy) / 1000.0, 0)").
 			Where("collector_id IN ? AND timestamp >= ? AND timestamp < ?", collectorIDs, dayStart, dayEnd).
 			Row().Scan(&dayEnergy)
+
+		if err != nil {
+			dataCollectionDetails = append(dataCollectionDetails, fmt.Sprintf("DB error for %s: %v", dayStart.Format("2006-01-02"), err))
+			continue
+		}
+
+		dataCollectionDetails = append(dataCollectionDetails, fmt.Sprintf("Date %s: %.3f kWh", dayStart.Format("2006-01-02"), dayEnergy))
 
 		if dayEnergy > 0 {
 			historicalData = append(historicalData, struct {
@@ -810,7 +968,7 @@ func predictSeasonalPattern(collectorIDs []string, todayStart, now time.Time) (*
 	}
 
 	if len(historicalData) == 0 {
-		return nil, fmt.Errorf("no historical data available for seasonal prediction")
+		return nil, fmt.Errorf("no historical data available for seasonal prediction. Data collection details: %v", dataCollectionDetails)
 	}
 
 	// Calculate average consumption for similar days
@@ -820,17 +978,18 @@ func predictSeasonalPattern(collectorIDs []string, todayStart, now time.Time) (*
 	}
 	avgHistorical := totalHistorical / float64(len(historicalData))
 
-	// Get current consumption ratio
-	currentConsumption := getTodayActualConsumption(collectorIDs, todayStart, now)
-	timeElapsed := now.Sub(todayStart).Hours()
-	timeRatio := timeElapsed / 24.0
+	// Adjust prediction based on current consumption pattern if we have current data
+	if hasCurrentData {
+		currentConsumption := getTodayActualConsumption(collectorIDs, todayStart, now)
+		timeElapsed := now.Sub(todayStart).Hours()
+		timeRatio := timeElapsed / 24.0
 
-	// Adjust prediction based on current consumption pattern
-	if timeRatio > 0 {
-		expectedByNow := avgHistorical * timeRatio
-		adjustmentFactor := currentConsumption / expectedByNow
-		if adjustmentFactor > 0.5 && adjustmentFactor < 2.0 {
-			avgHistorical *= adjustmentFactor
+		if timeRatio > 0 {
+			expectedByNow := avgHistorical * timeRatio
+			adjustmentFactor := currentConsumption / expectedByNow
+			if adjustmentFactor > 0.5 && adjustmentFactor < 2.0 {
+				avgHistorical *= adjustmentFactor
+			}
 		}
 	}
 
@@ -846,18 +1005,32 @@ func predictSeasonalPattern(collectorIDs []string, todayStart, now time.Time) (*
 }
 
 // predictMovingAverage uses moving average of recent days
-func predictMovingAverage(collectorIDs []string, todayStart, now time.Time) (*EnergyPrediction, error) {
+func predictMovingAverage(collectorIDs []string, todayStart, now time.Time, hasCurrentData bool) (*EnergyPrediction, error) {
+	// Validate input
+	if len(collectorIDs) == 0 {
+		return nil, fmt.Errorf("no collector IDs provided")
+	}
+
 	// Get past 7 days consumption
 	var recentDays []float64
+	var dataDetails []string
+
 	for i := 1; i <= 7; i++ {
 		dayStart := todayStart.AddDate(0, 0, -i)
 		dayEnd := dayStart.Add(24 * time.Hour)
 
 		var dayEnergy float64
-		model.DB.Model(&model.PowerData{}).
+		err := model.DB.Model(&model.PowerData{}).
 			Select("COALESCE(SUM(energy) / 1000.0, 0)").
 			Where("collector_id IN ? AND timestamp >= ? AND timestamp < ?", collectorIDs, dayStart, dayEnd).
 			Row().Scan(&dayEnergy)
+
+		if err != nil {
+			dataDetails = append(dataDetails, fmt.Sprintf("DB error for day -%d (%s): %v", i, dayStart.Format("2006-01-02"), err))
+			continue
+		}
+
+		dataDetails = append(dataDetails, fmt.Sprintf("Day -%d (%s): %.3f kWh", i, dayStart.Format("2006-01-02"), dayEnergy))
 
 		if dayEnergy > 0 {
 			recentDays = append(recentDays, dayEnergy)
@@ -865,7 +1038,7 @@ func predictMovingAverage(collectorIDs []string, todayStart, now time.Time) (*En
 	}
 
 	if len(recentDays) < 3 {
-		return nil, fmt.Errorf("insufficient historical data for moving average prediction")
+		return nil, fmt.Errorf("insufficient historical data for moving average prediction (found %d days, need at least 3). Data details: %v", len(recentDays), dataDetails)
 	}
 
 	// Calculate weighted moving average (recent days have higher weight)
@@ -879,16 +1052,18 @@ func predictMovingAverage(collectorIDs []string, todayStart, now time.Time) (*En
 
 	avgConsumption := weightedSum / totalWeight
 
-	// Adjust based on current day's pattern
-	currentConsumption := getTodayActualConsumption(collectorIDs, todayStart, now)
-	timeElapsed := now.Sub(todayStart).Hours()
-	timeRatio := timeElapsed / 24.0
+	// Adjust based on current day's pattern if we have current data
+	if hasCurrentData {
+		currentConsumption := getTodayActualConsumption(collectorIDs, todayStart, now)
+		timeElapsed := now.Sub(todayStart).Hours()
+		timeRatio := timeElapsed / 24.0
 
-	if timeRatio > 0.1 {
-		expectedByNow := avgConsumption * timeRatio
-		adjustmentFactor := currentConsumption / expectedByNow
-		if adjustmentFactor > 0.7 && adjustmentFactor < 1.5 {
-			avgConsumption *= adjustmentFactor
+		if timeRatio > 0.1 {
+			expectedByNow := avgConsumption * timeRatio
+			adjustmentFactor := currentConsumption / expectedByNow
+			if adjustmentFactor > 0.7 && adjustmentFactor < 1.5 {
+				avgConsumption *= adjustmentFactor
+			}
 		}
 	}
 
@@ -917,12 +1092,20 @@ type PredictionWeights struct {
 	MovingAverage float64
 }
 
-func calculatePredictionWeights(collectorIDs []string, todayStart, now time.Time) PredictionWeights {
+func calculatePredictionWeights(collectorIDs []string, todayStart, now time.Time, hasCurrentData bool) PredictionWeights {
 	// Default weights
 	weights := PredictionWeights{
 		Linear:        0.4,
 		Seasonal:      0.3,
 		MovingAverage: 0.3,
+	}
+
+	// If no current data, rely entirely on historical patterns
+	if !hasCurrentData {
+		weights.Linear = 0.0        // Can't do linear trend without current data
+		weights.Seasonal = 0.6      // Prefer seasonal patterns
+		weights.MovingAverage = 0.4 // Use moving average as backup
+		return weights
 	}
 
 	// Adjust weights based on data availability and time of day
@@ -941,6 +1124,77 @@ func calculatePredictionWeights(collectorIDs []string, todayStart, now time.Time
 	}
 
 	return weights
+}
+
+// createFallbackPrediction creates a simple prediction when all other methods fail
+func createFallbackPrediction(collectorIDs []string, todayStart, now time.Time, hasCurrentData bool) (*EnergyPrediction, error) {
+	if len(collectorIDs) == 0 {
+		return nil, fmt.Errorf("no collector IDs provided for fallback prediction")
+	}
+
+	// Try to get any available data from the past 30 days
+	var anyHistoricalData []model.PowerData
+	err := model.DB.Where("collector_id IN ? AND timestamp >= ?", collectorIDs, todayStart.AddDate(0, 0, -30)).
+		Limit(100). // Limit to avoid too much data
+		Find(&anyHistoricalData).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("database error in fallback prediction: %v", err)
+	}
+
+	if len(anyHistoricalData) == 0 {
+		return nil, fmt.Errorf("no historical data found for fallback prediction")
+	}
+
+	// Calculate a simple average energy consumption per day
+	var totalEnergy float64
+	dayMap := make(map[string]float64)
+
+	for _, data := range anyHistoricalData {
+		date := data.Timestamp.Format("2006-01-02")
+		dayMap[date] += data.Energy / 1000.0 // Convert to kWh
+		totalEnergy += data.Energy / 1000.0
+	}
+
+	var avgDailyEnergy float64
+	if len(dayMap) > 0 {
+		var totalDaily float64
+		for _, daily := range dayMap {
+			totalDaily += daily
+		}
+		avgDailyEnergy = totalDaily / float64(len(dayMap))
+	} else {
+		avgDailyEnergy = 5.0 // Default 5 kWh if no data
+	}
+
+	// Ensure minimum reasonable prediction
+	if avgDailyEnergy < 0.1 {
+		avgDailyEnergy = 1.0 // Minimum 1 kWh per day
+	}
+
+	currentConsumption := getTodayActualConsumption(collectorIDs, todayStart, now)
+
+	return &EnergyPrediction{
+		TotalDailyEnergyKWh:  avgDailyEnergy,
+		RemainingEnergyKWh:   math.Max(0, avgDailyEnergy-currentConsumption),
+		PredictedEndTime:     time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location()),
+		ConfidenceLevel:      30.0, // Low confidence for fallback
+		PredictionAccuracy:   "low",
+		HourlyPredictions:    []HourlyPrediction{},
+		CollectorPredictions: []CollectorPrediction{},
+		ModelMetrics: PredictionMetrics{
+			Algorithm:          "fallback",
+			DataQuality:        "limited",
+			HistoricalAccuracy: 30.0,
+			TrendStrength:      0.1,
+			SeasonalityScore:   0.1,
+			NoiseLevel:         0.8,
+		},
+		Recommendations: []string{
+			fmt.Sprintf("Fallback prediction based on %d historical data points from %d days", len(anyHistoricalData), len(dayMap)),
+			"Consider collecting more data for better predictions",
+		},
+	}, nil
 }
 
 func getTodayActualConsumption(collectorIDs []string, todayStart, now time.Time) float64 {
@@ -962,15 +1216,49 @@ func generateHourlyPredictions(collectorIDs []string, todayStart, now time.Time,
 		AvgEnergyRatio float64 `json:"avg_energy_ratio"`
 	}
 
-	model.DB.Raw(`
-		SELECT 
-			EXTRACT(HOUR FROM timestamp) as hour,
-			AVG(energy) / (SELECT AVG(energy) FROM power_data WHERE collector_id = ANY($1) AND timestamp >= $2) as avg_energy_ratio
-		FROM power_data 
-		WHERE collector_id = ANY($1) AND timestamp >= $2
-		GROUP BY EXTRACT(HOUR FROM timestamp)
-		ORDER BY hour
-	`, collectorIDs, todayStart.AddDate(0, 0, -7)).Scan(&hourlyPattern)
+	// Use GORM's standard query methods instead of raw SQL
+	historicalStartTime := todayStart.AddDate(0, 0, -7)
+
+	// Get all historical data
+	var historicalData []model.PowerData
+	model.DB.Where("collector_id IN ? AND timestamp >= ?", collectorIDs, historicalStartTime).
+		Find(&historicalData)
+
+	// Calculate overall average
+	var totalEnergy float64
+	var totalCount int64
+	for _, data := range historicalData {
+		totalEnergy += data.Energy
+		totalCount++
+	}
+	overallAvg := totalEnergy / float64(totalCount)
+
+	// Group by hour and calculate ratios
+	hourlyMap := make(map[int]struct {
+		TotalEnergy float64
+		Count       int64
+	})
+
+	for _, data := range historicalData {
+		hour := data.Timestamp.Hour()
+		entry := hourlyMap[hour]
+		entry.TotalEnergy += data.Energy
+		entry.Count++
+		hourlyMap[hour] = entry
+	}
+
+	// Convert to ratio format
+	for hour, entry := range hourlyMap {
+		avgEnergy := entry.TotalEnergy / float64(entry.Count)
+		ratio := avgEnergy / overallAvg
+		hourlyPattern = append(hourlyPattern, struct {
+			Hour           int     `json:"hour"`
+			AvgEnergyRatio float64 `json:"avg_energy_ratio"`
+		}{
+			Hour:           hour,
+			AvgEnergyRatio: ratio,
+		})
+	}
 
 	// Create predictions for remaining hours
 	for hour := currentHour + 1; hour < 24; hour++ {
@@ -1016,11 +1304,28 @@ func generateCollectorPredictions(collectorIDs []string, todayStart, now time.Ti
 			Where("collector_id = ? AND timestamp >= ? AND timestamp <= ?", collectorID, todayStart, now).
 			Row().Scan(&collectorData.CurrentEnergy)
 
-		// Get historical average for this collector
-		model.DB.Model(&model.PowerData{}).
-			Select("COALESCE(AVG(daily_energy.energy), 0)").
-			Table("(SELECT DATE(timestamp) as date, SUM(energy) / 1000.0 as energy FROM power_data WHERE collector_id = ? AND timestamp >= ? GROUP BY DATE(timestamp)) as daily_energy", collectorID, todayStart.AddDate(0, 0, -30)).
-			Row().Scan(&collectorData.HistoricalAvg)
+		// Get historical average for this collector using GORM methods
+		var historicalPowerData []model.PowerData
+		model.DB.Where("collector_id = ? AND timestamp >= ?", collectorID, todayStart.AddDate(0, 0, -30)).
+			Find(&historicalPowerData)
+
+		// Group by date and calculate daily totals
+		dailyTotals := make(map[string]float64)
+		for _, data := range historicalPowerData {
+			date := data.Timestamp.Format("2006-01-02")
+			dailyTotals[date] += data.Energy / 1000.0 // Convert to kWh
+		}
+
+		// Calculate average of daily totals
+		if len(dailyTotals) > 0 {
+			var totalDailyEnergy float64
+			for _, daily := range dailyTotals {
+				totalDailyEnergy += daily
+			}
+			collectorData.HistoricalAvg = totalDailyEnergy / float64(len(dailyTotals))
+		} else {
+			collectorData.HistoricalAvg = 0
+		}
 
 		// Calculate this collector's share of total prediction
 		var collectorShare float64
@@ -1066,9 +1371,26 @@ func calculatePredictionMetrics(collectorIDs []string, todayStart, now time.Time
 	}
 }
 
-func generatePredictionRecommendations(predictedEnergy, currentEnergy float64, now time.Time) []string {
+func generatePredictionRecommendations(predictedEnergy, currentEnergy float64, now time.Time, hasCurrentData bool) []string {
 	var recommendations []string
 
+	// If no current data, provide different recommendations
+	if !hasCurrentData {
+		recommendations = append(recommendations, "Prediction based on historical patterns only. Monitor actual consumption for accuracy.")
+
+		if predictedEnergy > 50 {
+			recommendations = append(recommendations, "High energy consumption predicted for today based on historical data. Consider load optimization.")
+		}
+
+		currentHour := now.Hour()
+		if currentHour >= 18 && currentHour <= 22 {
+			recommendations = append(recommendations, "Peak hours detected. Consider deferring non-critical loads.")
+		}
+
+		return recommendations
+	}
+
+	// With current data, provide detailed recommendations
 	timeElapsed := time.Since(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())).Hours()
 	expectedByNow := predictedEnergy * (timeElapsed / 24.0)
 

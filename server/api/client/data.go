@@ -97,11 +97,11 @@ func getCollectorStatus(c *gin.Context) {
 	var dataCount int64
 
 	model.DB.Model(&model.PowerData{}).
-		Where("collector_id = ?", collector.ID).
+		Where("collector_id = ?", collector.CollectorID).
 		Count(&dataCount)
 
 	model.DB.Model(&model.PowerData{}).
-		Where("collector_id = ?", collector.ID).
+		Where("collector_id = ?", collector.CollectorID).
 		Select("MAX(timestamp)").
 		Scan(&lastDataTime)
 
@@ -131,7 +131,7 @@ func getLatestData(c *gin.Context) {
 
 	// Get latest data from database
 	var latestData model.PowerData
-	if err := model.DB.Where("collector_id = ?", collector.ID).
+	if err := model.DB.Where("collector_id = ?", collector.CollectorID).
 		Order("timestamp DESC").First(&latestData).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusOK, gin.H{
@@ -210,7 +210,7 @@ func getHistoryData(c *gin.Context) {
 	// Query from database
 	var data []model.PowerData
 	query := model.DB.Where("collector_id = ? AND timestamp BETWEEN ? AND ?",
-		collector.ID, startTime, endTime).
+		collector.CollectorID, startTime, endTime).
 		Order("timestamp ASC").
 		Limit(limit)
 
@@ -250,11 +250,11 @@ func getDataStatistics(c *gin.Context) {
 
 	// Get basic stats from database
 	model.DB.Model(&model.PowerData{}).
-		Where("collector_id = ?", collector.ID).
+		Where("collector_id = ?", collector.CollectorID).
 		Count(&stats.TotalDataPoints)
 
 	model.DB.Model(&model.PowerData{}).
-		Where("collector_id = ?", collector.ID).
+		Where("collector_id = ?", collector.CollectorID).
 		Select("AVG(power), MAX(power), MIN(power), MAX(energy), MAX(timestamp)").
 		Row().Scan(&stats.AvgPower, &stats.MaxPower, &stats.MinPower, &stats.TotalEnergy, &stats.LastUpdated)
 
@@ -295,11 +295,11 @@ func getCollectorDataView(c *gin.Context) {
 		}
 
 		model.DB.Model(&model.PowerData{}).
-			Where("collector_id = ?", collector.ID).
+			Where("collector_id = ?", collector.CollectorID).
 			Count(&stats.TotalDataPoints)
 
 		model.DB.Model(&model.PowerData{}).
-			Where("collector_id = ?", collector.ID).
+			Where("collector_id = ?", collector.CollectorID).
 			Select("MIN(timestamp), MAX(timestamp), AVG(power), MAX(power), SUM(energy)").
 			Row().Scan(&stats.FirstDataTime, &stats.LastDataTime, &stats.AvgPower, &stats.MaxPower, &stats.TotalEnergy)
 
@@ -307,7 +307,7 @@ func getCollectorDataView(c *gin.Context) {
 
 		// Get recent power trend (last 10 readings)
 		var recentData []model.PowerData
-		model.DB.Where("collector_id = ?", collector.ID).
+		model.DB.Where("collector_id = ?", collector.CollectorID).
 			Order("timestamp DESC").
 			Limit(10).
 			Find(&recentData)
@@ -326,7 +326,7 @@ func getCollectorDataView(c *gin.Context) {
 	case "realtime":
 		// Get latest real-time data
 		var latestData model.PowerData
-		if err := model.DB.Where("collector_id = ?", collector.ID).
+		if err := model.DB.Where("collector_id = ?", collector.CollectorID).
 			Order("timestamp DESC").First(&latestData).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "No data found for collector"})
 			return
@@ -362,7 +362,7 @@ func getCollectorDataView(c *gin.Context) {
 		var historyData []model.PowerData
 		limit := 1000 // Limit to prevent too much data
 
-		model.DB.Where("collector_id = ? AND timestamp >= ?", collector.ID, startTime).
+		model.DB.Where("collector_id = ? AND timestamp >= ?", collector.CollectorID, startTime).
 			Order("timestamp ASC").
 			Limit(limit).
 			Find(&historyData)
