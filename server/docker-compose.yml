@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  power-monitor:
+    build: .
+    container_name: power-monitor-server
+    ports:
+      - "8080:8080"
+    environment:
+      - GIN_MODE=release
+    volumes:
+      - ./app.ini:/app/app.ini:ro
+      - power-monitor-data:/app/data
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+    networks:
+      - power-monitor-network
+
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: power-monitor-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123456
+      - DOCKER_INFLUXDB_INIT_ORG=power-monitor
+      - DOCKER_INFLUXDB_INIT_BUCKET=power-data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    restart: unless-stopped
+    networks:
+      - power-monitor-network
+
+  # Optional: Grafana for advanced visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: power-monitor-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123456
+      - GF_INSTALL_PLUGINS=grafana-influxdb-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+    networks:
+      - power-monitor-network
+
+  # Optional: Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: power-monitor-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - power-monitor-network
+    command: redis-server --appendonly yes
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: power-monitor-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - power-monitor
+    restart: unless-stopped
+    networks:
+      - power-monitor-network
+
+volumes:
+  power-monitor-data:
+    driver: local
+  influxdb-data:
+    driver: local
+  influxdb-config:
+    driver: local
+  grafana-data:
+    driver: local
+  redis-data:
+    driver: local
+  nginx-logs:
+    driver: local
+
+networks:
+  power-monitor-network:
+    driver: bridge 

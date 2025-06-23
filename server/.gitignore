@@ -1,0 +1,13 @@
+# Local configuration
+app.ini
+
+# Database file
+power_monitor.db
+
+# Executables
+power-monitor.exe
+power-monitor
+
+# Data and storage
+data/
+storage/ 

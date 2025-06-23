@@ -1,0 +1,31 @@
+# IDE files
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Go build results
+*.exe
+*.exe~
+*.dll
+*.so
+*.a
+*.out
+
+# Go dependency directory
+vendor/
+
+# Log files
+*.log
+*.log.*
+
+# Config files
+*.bak
+
+# Database files
+*.db
+*.db-journal

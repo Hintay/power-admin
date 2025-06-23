@@ -1,0 +1,29 @@
+[Unit]
+Description=Power Monitor Service
+After=network.target
+Documentation=https://github.com/Hintay/power-admin
+
+[Service]
+Type=simple
+# It is recommended to create a dedicated user and group to run the service
+# useradd --system --no-create-home --shell /bin/false power-monitor
+User=www-data
+Group=www-data
+
+# The working directory of the service
+WorkingDirectory=/opt/power-monitor
+
+# The command to start the service
+# Make sure the power-monitor executable is in your PATH or use an absolute path
+# And the config file path is correct
+ExecStart=/usr/local/bin/power-monitor --config /etc/power-monitor/app.ini
+
+Restart=always
+RestartSec=5s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=power-monitor
+
+[Install]
+WantedBy=multi-user.target 
